@@ -6,8 +6,10 @@ from typing import List
 from jwt_manager import create_token, JWTBearer
 
 from config.database import Session, Base, engine
-from models.movie import Movie
-from models.user import User
+from models.movie import Movie as MovieModel
+from schemas.user import User
+
+from schemas.movie import Movie
 
 app = FastAPI()
 
@@ -91,7 +93,10 @@ def get_movie_by_category(category: str = Query(min_length= 5, max_length= 15)) 
     
 @app.post(path = "/movies", tags = ["Movies"], summary= "Add a new movie to films", response_model= dict, status_code=status.HTTP_201_CREATED)
 def register_movie(new_movie: Movie) -> dict:
-    movies.append(dict(new_movie))
+    db = Session()
+    movie = MovieModel(**new_movie.model_dump())
+    db.add(movie)
+    db.commit()
     return JSONResponse(content = {"message":"Movie sucessfully registered!"}, status_code= status.HTTP_201_CREATED)
 
 # Login
