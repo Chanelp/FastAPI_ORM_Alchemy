@@ -1,5 +1,5 @@
 # Importar el modulo
-from fastapi import FastAPI, Body, Path, Query, status, Depends
+from fastapi import FastAPI, Body, Path, Query, status, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from typing import List
 
@@ -92,12 +92,17 @@ def get_movie_by_category(category: str = Query(min_length= 5, max_length= 15)) 
         return {"Error": "Movies in that category not found!"}
     
 @app.post(path = "/movies", tags = ["Movies"], summary= "Add a new movie to films", response_model= dict, status_code=status.HTTP_201_CREATED)
-def register_movie(new_movie: Movie) -> dict:
-    db = Session()
-    movie = MovieModel(**new_movie.model_dump())
-    db.add(movie)
-    db.commit()
-    return JSONResponse(content = {"message":"Movie sucessfully registered!"}, status_code= status.HTTP_201_CREATED)
+async def register_movie(new_movie: Movie) -> dict:
+    try:
+        db = Session()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= str(e))
+    
+    else:
+        movie = MovieModel(**new_movie.model_dump())
+        db.add(movie)
+        db.commit()
+        return JSONResponse(content = {"message":"Movie sucessfully registered!"}, status_code= status.HTTP_201_CREATED)
 
 # Login
 @app.post(path= "/login", tags = ["Auth"], summary= "Log In")

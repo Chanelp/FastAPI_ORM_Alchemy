@@ -15,7 +15,6 @@ class Movie(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                "id": 1,
                 "overview": "Resumen",
                 "title": "Nombre de la peli",
                 "director": "Quien la dirige",
