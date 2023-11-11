@@ -103,8 +103,7 @@ def get_movie_by_category(category: str = Query(min_length= 5, max_length= 15)) 
             return JSONResponse(status_code = status.HTTP_404_NOT_FOUND, content = {"Error": "Movies in that category not found!"})
         
         return JSONResponse(status_code =  status.HTTP_200_OK, content = jsonable_encoder(result))
-        
-    
+            
 @app.post(path = "/movies", tags = ["Movies"], summary= "Add a new movie to films", response_model= dict, status_code=status.HTTP_201_CREATED)
 async def register_movie(new_movie: Movie) -> dict:
     try:
@@ -129,15 +128,28 @@ def login(user: User):
 
 @app.put(path = "/movies/{id}", tags = ["Movies"], summary = "Update movie", response_model = dict, status_code= status.HTTP_200_OK)
 def update_movie(id: int, film: Movie) -> dict:
-    for movie in movies:
-        if movie['id'] == id:
-            movie['title'] = film.title
-            movie['overview'] = film.overview
-            movie['year'] =  film.year
-            movie['category'] = film.category
-            movie['director'] = film.director
-            movie['rating'] =  film.rating
-            return JSONResponse(content = {"message":"Movie successfully updated!"})
+    try:
+        db = Session()
+    except HTTPException as e:
+        raise HTTPException(status_code= status.HTTP_500_INTERNAL_SERVER_ERROR, detail= str(e))
+    
+    else:
+        result = db.query(MovieModel).filter(MovieModel.id == id).one_or_none()
+
+        if not result:
+            return JSONResponse(status_code= status.HTTP_404_NOT_FOUND, content= {"message":"ID not found"})
+        
+        result.title = film.title
+        result.category = film.category
+        result.director = film.director
+        result.overview = film.overview
+        result.rating = film.rating
+        result.year = film.year
+
+        db.add(result)
+        db.commit()
+        db.refresh(result)
+        return JSONResponse(content = {"message":"Movie successfully updated!"})
         
 @app.delete(path = "/movies/{id}", tags = ["Movies"], summary= "Delete a movie", response_model = dict, status_code= status.HTTP_200_OK)
 def delete_movie(id: int) -> dict:
