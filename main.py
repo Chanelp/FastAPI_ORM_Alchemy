@@ -153,7 +153,17 @@ def update_movie(id: int, film: Movie) -> dict:
         
 @app.delete(path = "/movies/{id}", tags = ["Movies"], summary= "Delete a movie", response_model = dict, status_code= status.HTTP_200_OK)
 def delete_movie(id: int) -> dict:
-    for movie in movies:
-        if movie['id'] == id:
-            movies.remove(movie)
-            return JSONResponse(content= {"message":"Movie successfully removed!"}, status_code= status.HTTP_200_OK)
+    try:
+        db = Session()
+    except HTTPException as e:
+        raise HTTPException(status_code= status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e))
+    
+    else:
+        result = db.query(MovieModel).filter(MovieModel.id == id).first()
+
+        if not result:
+            return JSONResponse(status_code = status.HTTP_404_NOT_FOUND, content =  {"message": "ID not found"})
+        
+        db.delete(result)
+        db.commit()
+        return JSONResponse(status_code= status.HTTP_200_OK, content = "Record deleted")
