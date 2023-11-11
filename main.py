@@ -2,17 +2,14 @@
 from fastapi import FastAPI, Body, Path, Query, status, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from typing import List
-
 from jwt_manager import create_token, JWTBearer
-
 from config.database import Session, Base, engine
 from models.movie import Movie as MovieModel
 from schemas.user import User
-
 from schemas.movie import Movie
+from fastapi.encoders import jsonable_encoder
 
 app = FastAPI()
-
 app.title = "First Application Programming Interface with FastApi"
 app.version = "0.0.2"
 
@@ -66,22 +63,31 @@ movies = [
         }
     ]
 
-
-@app.get('/', tags = ['Home'])
-def message():
-    return "Learning about fastApi"
-
 @app.get('/movies', tags = ['Movies'], summary= "Get all movies", response_model = List[Movie], dependencies= [Depends(JWTBearer())])
 def get_movies() -> List[Movie]:
-    return JSONResponse(content = movies)
+    try:
+        db = Session()
+    except HTTPException as e:
+        raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e))
+    
+    else:
+        result = db.query(MovieModel).all()
+        return JSONResponse(status_code = status.HTTP_200_OK, content = jsonable_encoder(result))
 
 @app.get(path= '/movies/{id}', tags = ["Movies"], summary= "Get one movie", response_model = Movie)
 def get_movie(id: int =  Path(ge=1, le=200)) -> Movie:
     try:
-        movie_found = [movie for movie in movies if movie['id'] == id][0]
-        return JSONResponse(content= movie_found)
-    except IndexError:
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content= [])
+        db = Session()
+    except HTTPException as e:
+        return HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail= str(e))
+    
+    else:
+        result = db.query(MovieModel).filter(MovieModel.id == id).first()
+
+        if not result:
+            return JSONResponse(status_code = status.HTTP_404_NOT_FOUND, content= {"message": "No encontrada"})
+        
+        return JSONResponse(status_code= status.HTTP_200_OK, content = jsonable_encoder(result))
     
 @app.get(path= "/movies/", summary="Get movie by category", tags = ["Movies"], response_model = List[Movie], status_code= status.HTTP_200_OK)
 def get_movie_by_category(category: str = Query(min_length= 5, max_length= 15)) -> List[Movie]:
