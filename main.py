@@ -2,7 +2,8 @@
 from fastapi import FastAPI, Body, Path, Query, status, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from typing import List
-from jwt_manager import create_token, JWTBearer
+from jwt_manager import create_token
+from middlewares.jwt_bearer import JWTBearer
 from config.database import Session, Base, engine
 from models.movie import Movie as MovieModel
 from schemas.user import User
