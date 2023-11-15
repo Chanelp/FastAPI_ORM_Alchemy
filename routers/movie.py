@@ -87,12 +87,11 @@ def delete_movie(id: int) -> dict:
         raise HTTPException(status_code= status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e))
     
     else:
-        result = MovieModel(db).get_movie(id)
+        result = MovieService(db).get_movie(id)
 
         if not result:
             return JSONResponse(status_code = status.HTTP_404_NOT_FOUND, content =  {"message": "ID not found"})
         
-        db.delete(result)
-        db.commit()
-        return JSONResponse(status_code= status.HTTP_200_OK, content = "Record deleted")
+        MovieService(db).delete_movie(id)
+        return JSONResponse(status_code= status.HTTP_200_OK, content = "Movie deleted")
     

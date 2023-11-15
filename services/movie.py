@@ -21,7 +21,6 @@ class MovieService:
         movie_to_create = MovieModel(**new_movie.model_dump())
         self.db.add(movie_to_create)
         self.db.commit()
-        return
     
     def update_movie(self, id: int, film: Movie):
         movie_to_update = self.get_movie(id)
@@ -37,3 +36,7 @@ class MovieService:
         self.db.commit()
         self.db.refresh(movie_to_update)
 
+    def delete_movie(self, id: int):
+        self.db.query(MovieModel).filter(MovieModel.id == id).delete()
+        self.db.commit()
+        return
