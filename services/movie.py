@@ -23,8 +23,8 @@ class MovieService:
         self.db.commit()
         return
     
-    def update_movie(self, id, film):
-        movie_to_update = self.db.query(MovieModel).filter(MovieModel.id == id).first()
+    def update_movie(self, id: int, film: Movie):
+        movie_to_update = self.get_movie(id)
 
         movie_to_update.title = film.title
         movie_to_update.category = film.category
