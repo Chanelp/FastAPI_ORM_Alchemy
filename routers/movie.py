@@ -60,9 +60,7 @@ async def register_movie(new_movie: Movie) -> dict:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= str(e))
     
     else:
-        movie = MovieService(db).create_movie(new_movie)
-        db.add(movie)
-        db.commit()
+        MovieService(db).create_movie(new_movie)
         return JSONResponse(content = {"message":"Movie sucessfully registered!"}, status_code= status.HTTP_201_CREATED)
 
 @movie_router.put(path = "/movies/{id}", tags = ["Movies"], summary = "Update movie", response_model = dict, status_code= status.HTTP_200_OK)
@@ -73,22 +71,13 @@ def update_movie(id: int, film: Movie) -> dict:
         raise HTTPException(status_code= status.HTTP_500_INTERNAL_SERVER_ERROR, detail= str(e))
     
     else:
-        result = db.query(MovieModel).filter(MovieModel.id == id).one_or_none()
+        movie_update = MovieService(db).get_movie(id)
 
-        if not result:
+        if not movie_update:
             return JSONResponse(status_code= status.HTTP_404_NOT_FOUND, content= {"message":"ID not found"})
         
-        result.title = film.title
-        result.category = film.category
-        result.director = film.director
-        result.overview = film.overview
-        result.rating = film.rating
-        result.year = film.year
-
-        db.add(result)
-        db.commit()
-        db.refresh(result)
-        return JSONResponse(content = {"message":"Movie successfully updated!"})
+        MovieService(db).update_movie(id, film)
+        return JSONResponse(content = {"message":"Movie successfully updated!", "details": jsonable_encoder(movie_update)})
         
 @movie_router.delete(path = "/movies/{id}", tags = ["Movies"], summary= "Delete a movie", response_model = dict, status_code= status.HTTP_200_OK)
 def delete_movie(id: int) -> dict:
@@ -98,7 +87,7 @@ def delete_movie(id: int) -> dict:
         raise HTTPException(status_code= status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e))
     
     else:
-        result = db.query(MovieModel).filter(MovieModel.id == id).first()
+        result = MovieModel(db).get_movie(id)
 
         if not result:
             return JSONResponse(status_code = status.HTTP_404_NOT_FOUND, content =  {"message": "ID not found"})
