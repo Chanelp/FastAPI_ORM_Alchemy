@@ -7,6 +7,7 @@ from config.database import Session
 from models.movie import Movie as MovieModel
 from schemas.movie import Movie
 from fastapi.encoders import jsonable_encoder
+from services.movie import MovieService
 
 movie_router = APIRouter()
 
@@ -18,7 +19,7 @@ def get_movies() -> List[Movie]:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e))
     
     else:
-        result = db.query(MovieModel).all()
+        result = MovieService(db).get_movies()
         return JSONResponse(status_code = status.HTTP_200_OK, content = jsonable_encoder(result))
 
 @movie_router.get(path= '/movies/{id}', tags = ["Movies"], summary= "Get one movie", response_model = Movie)
@@ -29,7 +30,7 @@ def get_movie(id: int =  Path(ge=1, le=200)) -> Movie:
         return HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail= str(e))
     
     else:
-        result = db.query(MovieModel).filter(MovieModel.id == id).first()
+        result = MovieService(db).get_movie(id)
 
         if not result:
             return JSONResponse(status_code = status.HTTP_404_NOT_FOUND, content= {"message": "No encontrada"})
@@ -44,7 +45,7 @@ def get_movie_by_category(category: str = Query(min_length= 5, max_length= 15)) 
         raise HTTPException(status_code= status.HTTP_500_INTERNAL_SERVER_ERROR, detail = str(e))
     
     else:
-        result = db.query(MovieModel).filter(MovieModel.category == category).all()
+        result = MovieService(db).get_movies_by_category(category)
 
         if not result:
             return JSONResponse(status_code = status.HTTP_404_NOT_FOUND, content = {"Error": "Movies in that category not found!"})
@@ -59,7 +60,7 @@ async def register_movie(new_movie: Movie) -> dict:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= str(e))
     
     else:
-        movie = MovieModel(**new_movie.model_dump())
+        movie = MovieService(db).create_movie(new_movie)
         db.add(movie)
         db.commit()
         return JSONResponse(content = {"message":"Movie sucessfully registered!"}, status_code= status.HTTP_201_CREATED)
