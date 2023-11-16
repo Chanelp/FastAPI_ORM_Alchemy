@@ -4,7 +4,6 @@ from fastapi.responses import JSONResponse
 from typing import List
 from middlewares.jwt_bearer import JWTBearer
 from config.database import Session
-from models.movie import Movie as MovieModel
 from schemas.movie import Movie
 from fastapi.encoders import jsonable_encoder
 from services.movie import MovieService
